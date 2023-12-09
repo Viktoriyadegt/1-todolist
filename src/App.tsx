@@ -9,52 +9,82 @@ export type TaskPropsType = {
     isDone: boolean
 }
 
+export type TasksType = {
+    [key:string]: Array<TaskPropsType>
+}
+export type TodolistsType = {
+    id: string
+    title: string
+    filter: FilterType
+}
 export type FilterType = 'all' | 'active' | 'completed'
 
 function App() {
-    let [filter, setFilter] = useState<FilterType>('all')
-    const [tasks, setTasks] = useState<Array<TaskPropsType>>([
-        {id: v1(), title: "HTML&CSS", isDone: true},
-        {id: v1(), title: "JS", isDone: true},
-        {id: v1(), title: "ReactJS", isDone: false}
+
+    let todolistID1 = v1()
+    let todolistID2 = v1()
+
+    let [todolists, setTodolists] = useState<Array<TodolistsType>>([
+        {id: todolistID1, title: 'What to learn', filter: 'all'},
+        {id: todolistID2, title: 'What to buy', filter: 'all'},
     ])
 
-    const removeTask = (taskId: string) => {
-        setTasks(tasks.filter(t => t.id !== taskId))
-    }
+    let [tasks, setTasks] = useState<TasksType>({
+        [todolistID1]: [
+            {id: v1(), title: 'HTML&CSS', isDone: true},
+            {id: v1(), title: 'JS', isDone: true},
+            {id: v1(), title: 'ReactJS', isDone: false},
 
-    const addTask = (title: string) => {
+        ],
+        [todolistID2]: [
+            {id: v1(), title: 'Rest API', isDone: true},
+            {id: v1(), title: 'GraphQL', isDone: false},
+        ]
+    })
+
+    const removeTask = (todolistId: string, taskId: string) => {
+        setTasks({...tasks, [todolistId]: tasks[todolistId].filter(f => f.id !== taskId)})}
+
+    const addTask = (todolistId:string, title: string) => {
         const newTask = {id: v1(), title, isDone: false}
-        setTasks([newTask, ...tasks])
-    }
+        setTasks({...tasks, [todolistId]: [newTask, ...tasks[todolistId]]})}
 
-    const changeStatus = (taskId: string, isDone: boolean) => {
-        setTasks(tasks.map(m=>m.id===taskId? {...m, isDone} : m))
-    }
+    const changeStatus = (todolistId: string, taskId: string, isDone: boolean) => {
+        setTasks({...tasks, [todolistId]: tasks[todolistId].map(m=>m.id===taskId? {...m, isDone} : m)})}
 
-    let taskForTodolist = tasks
-    if (filter === 'active') {
-        taskForTodolist = tasks.filter(t => !t.isDone)
-    }
-    if (filter === 'completed') {
-        taskForTodolist = tasks.filter(t => t.isDone)
-    }
+    const changeFilter = (todolistId: string, filter: FilterType) => {
+        setTodolists(todolists.map(tl => tl.id === todolistId ? {...tl, filter} : tl))}
 
-    const changeFilter = (filter: FilterType) => {
-        setFilter(filter)
+    const removeTodolist = (todolistId: string) => {
+        setTodolists(todolists.filter(f=>f.id!==todolistId))
+        delete tasks[todolistId]
+        setTasks({...tasks})
     }
 
     return (
         <div className="App">
-            <Todolist
-                title={'What to learn'}
-                tasks={taskForTodolist}
-                removeTask={removeTask}
-                changeFilter={changeFilter}
-                addTask={addTask}
-                changeStatus={changeStatus}
-                filter={filter}
-            />
+            {todolists.map(todolist => {
+                let taskForTodolist = tasks[todolist.id]
+                if (todolist.filter === 'active') {
+                    taskForTodolist = taskForTodolist.filter(t => !t.isDone)
+                }
+                if (todolist.filter === 'completed') {
+                    taskForTodolist = taskForTodolist.filter(t => t.isDone)
+                }
+                return <Todolist
+                    key={todolist.id}
+                    id={todolist.id}
+                    title={'What to learn'}
+                    tasks={taskForTodolist}
+                    removeTask={removeTask}
+                    changeFilter={changeFilter}
+                    addTask={addTask}
+                    changeStatus={changeStatus}
+                    filter={todolist.filter}
+                    removeTodolist={removeTodolist}
+                />
+            })}
+
         </div>
     );
 }
